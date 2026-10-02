@@ -719,17 +719,29 @@ graph.add_edge("guardrail_blocked", END)
 # =========================
 # PostgreSQL Checkpointer - original persistence kept
 # =========================
-DATABASE_URL = get_database_url()
-_conn = psycopg.connect(
-    DATABASE_URL,
-    autocommit=True,
-    row_factory=dict_row,
-)
-checkpointer = PostgresSaver(_conn)
-checkpointer.setup()
+# DATABASE_URL = get_database_url()
+# _conn = psycopg.connect(
+#     DATABASE_URL,
+#     autocommit=True,
+#     row_factory=dict_row,
+# )
+# checkpointer = PostgresSaver(_conn)
+# checkpointer.setup()
+
+# travel_graph = graph.compile(checkpointer=checkpointer)
+
+from langgraph.checkpoint.sqlite import SqliteSaver
+import sqlite3
+
+# Persistent file (survives restarts)
+conn = sqlite3.connect("checkpoints.db", check_same_thread=False)
+checkpointer = SqliteSaver(conn)
+# checkpointer.setup() is not required for SqliteSaver in recent versions
+
+# OR pure in-memory (lost on process exit)
+# checkpointer = SqliteSaver.from_conn_string(":memory:")
 
 travel_graph = graph.compile(checkpointer=checkpointer)
-
 
 # =========================
 # FastAPI-facing helpers
